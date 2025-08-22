@@ -1,0 +1,14 @@
+/*
+  Installed from https://reactbits.dev/default/
+*/
+
+.darkveil-canvas {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: block;
+  pointer-events: none;
+  z-index: 0;
+}

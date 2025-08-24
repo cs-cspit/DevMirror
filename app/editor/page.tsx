@@ -1,36 +1,39 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { LogIn, LogOut } from "lucide-react"
+import { signIn, signOut, useSession } from "next-auth/react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+
+
+import { AIAssistant } from "@/components/ai-assistant"
+import { CloudStorage } from "@/components/cloud-storage"
+import { CollaborationSystem } from "@/components/collaboration-system"
+import FolderManager from "@/components/folder-manager"
+import { LivePreview } from "@/components/live-preview"
+import { useToast } from "@/hooks/use-toast"
 import {
-  Save,
+  Cloud,
   Download,
+  FolderOpen,
+  Menu,
+  Pause,
+  Play,
+  Save,
+  Settings,
   Share2,
   Sparkles,
-  FolderOpen,
-  Play,
-  Pause,
   Users,
-  Cloud,
-  Settings,
   Wifi,
   WifiOff,
-  Menu,
   X,
 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import Link from "next/link"
-import Image from "next/image"
-import { LivePreview } from "@/components/live-preview"
-import FolderManager from "@/components/folder-manager"
-import { CollaborationSystem } from "@/components/collaboration-system"
-import { CloudStorage } from "@/components/cloud-storage"
-import { AIAssistant } from "@/components/ai-assistant"
-import { LanguageSelector } from "@/components/language-selector"
-import { useSession } from "next-auth/react"
 import dynamic from "next/dynamic"
+import Image from "next/image"
+import Link from "next/link"
 const CodeEditor = dynamic(() => import("@/components/code-editor"), { ssr: false })
 
 interface FileItem {
@@ -48,6 +51,7 @@ interface FileItem {
 
 export default function EditorPage() {
   // Initialize with default project structure
+  const { data: session } = useSession()
   const [files, setFiles] = useState<FileItem[]>([
     {
       id: "root",
@@ -319,6 +323,15 @@ document.addEventListener('DOMContentLoaded', function() {
     })
   }
 
+      const router = useRouter()
+
+    // Redirect unverified users
+    useEffect(() => {
+      if (session?.user && !session.user.isVerified) {
+        router.push("/auth/verify-email")
+      }
+    }, [session, router])
+
   const handleDownload = () => {
     const findFilesByLanguage = (items: FileItem[], language: string): FileItem[] => {
       let result: FileItem[] = []
@@ -512,8 +525,16 @@ document.addEventListener('DOMContentLoaded', function() {
         <header className="bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center justify-between shadow-sm relative z-10">
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-2">
-              <Image src="/logo.png" alt="DevMirror" width={28} height={28} className="rounded-lg" />
-              <span className="text-silver-100 font-semibold hidden sm:block">DevMirror</span>
+              <Image
+                src="/logo.png"
+                alt="DevMirror"
+                width={28}
+                height={28}
+                className="rounded-lg"
+              />
+              <span className="text-silver-100 font-semibold hidden sm:block">
+                DevMirror
+              </span>
             </Link>
 
             <div className="hidden sm:block">
@@ -563,7 +584,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     size="sm"
                     variant="ghost"
                     onClick={() => setShowFolders(!showFolders)}
-                    className={`text-gray-400 hover:bg-gray-800 hover:text-gray-300 ${showFolders ? "bg-gray-800 text-gray-300" : ""}`}
+                    className={`text-gray-400 hover:bg-gray-800 hover:text-gray-300 ${
+                      showFolders ? "bg-gray-800 text-gray-300" : ""
+                    }`}
                   >
                     <FolderOpen className="h-4 w-4 mr-1" />
                     Files
@@ -580,7 +603,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     size="sm"
                     variant="ghost"
                     onClick={() => setShowAI(!showAI)}
-                    className={`text-gray-400 hover:bg-gray-800 hover:text-gray-300 ${showAI ? "bg-gray-800 text-gray-300" : ""}`}
+                    className={`text-gray-400 hover:bg-gray-800 hover:text-gray-300 ${
+                      showAI ? "bg-gray-800 text-gray-300" : ""
+                    }`}
                   >
                     <Sparkles className="h-4 w-4 mr-1" />
                     AI
@@ -597,7 +622,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     size="sm"
                     variant="ghost"
                     onClick={() => setShowCollaboration(!showCollaboration)}
-                    className={`text-gray-400 hover:bg-gray-800 hover:text-gray-300 ${showCollaboration ? "bg-gray-800 text-gray-300" : ""}`}
+                    className={`text-gray-400 hover:bg-gray-800 hover:text-gray-300 ${
+                      showCollaboration ? "bg-gray-800 text-gray-300" : ""
+                    }`}
                   >
                     <Users className="h-4 w-4 mr-1" />
                     Team
@@ -610,11 +637,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
               <Tooltip>
                 <TooltipTrigger asChild>
+                  {session?.user ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => signOut({ callbackUrl: "/auth" })}
+                      className="text-gray-400 hover:bg-gray-800 hover:text-gray-300"
+                    >
+                      <LogOut className="h-4 w-4 mr-1" />
+                      Logout
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        signIn(undefined, { callbackUrl: "/auth" })
+                      }
+                      className="text-gray-400 hover:bg-gray-800 hover:text-gray-300"
+                    >
+                      <LogIn className="h-4 w-4 mr-1" />
+                      Login
+                    </Button>
+                  )}
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {session?.user
+                      ? "Sign out of your account"
+                      : "Sign in to your account"}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => setShowCloudStorage(!showCloudStorage)}
-                    className={`text-gray-400 hover:bg-gray-800 hover:text-gray-300 ${showCloudStorage ? "bg-gray-800 text-gray-300" : ""}`}
+                    className={`text-gray-400 hover:bg-gray-800 hover:text-gray-300 ${
+                      showCloudStorage ? "bg-gray-800 text-gray-300" : ""
+                    }`}
                   >
                     <Cloud className="h-4 w-4 mr-1" />
                     Cloud
@@ -681,7 +745,11 @@ document.addEventListener('DOMContentLoaded', function() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link href="/templates">
-                    <Button size="sm" variant="ghost" className="text-gray-400 hover:bg-gray-800 hover:text-gray-300">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-gray-400 hover:bg-gray-800 hover:text-gray-300"
+                    >
                       <FolderOpen className="h-4 w-4 mr-1" />
                       Templates
                     </Button>
@@ -700,7 +768,11 @@ document.addEventListener('DOMContentLoaded', function() {
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className="md:hidden text-gray-400 hover:bg-gray-800 hover:text-gray-300"
             >
-              {showMobileMenu ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              {showMobileMenu ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <Menu className="h-4 w-4" />
+              )}
             </Button>
           </div>
         </header>
@@ -748,7 +820,6 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         )}
 
-
         {/* Main Editor Area */}
         <div className="flex-1 flex overflow-hidden">
           {/* File Explorer */}
@@ -758,7 +829,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 files={files}
                 setFiles={setFiles}
                 activeFileId={activeFile?.id || null}
-                setActiveFileId={id => {
+                setActiveFileId={(id) => {
                   const findFile = (items: FileItem[]): FileItem | null => {
                     for (const item of items) {
                       if (item.id === id) return item;
@@ -776,7 +847,9 @@ document.addEventListener('DOMContentLoaded', function() {
           )}
 
           {/* Code Editor */}
-          <div className={`${getPanelWidth()} flex flex-col border-r border-gray-800 overflow-auto`}>
+          <div
+            className={`${getPanelWidth()} flex flex-col border-r border-gray-800 overflow-auto`}
+          >
             <div className="bg-gray-900 border-b border-gray-800 p-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -790,7 +863,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     </span>
                   )}
                   {activeFile?.isModified && (
-                    <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">Modified</span>
+                    <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                      Modified
+                    </span>
                   )}
                 </div>
                 <div className="flex items-center space-x-1">
@@ -800,7 +875,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     onClick={togglePreview}
                     className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
                   >
-                    {isRunning ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                    {isRunning ? (
+                      <Pause className="h-3 w-3" />
+                    ) : (
+                      <Play className="h-3 w-3" />
+                    )}
                   </Button>
                 </div>
               </div>
@@ -809,24 +888,38 @@ document.addEventListener('DOMContentLoaded', function() {
             <div className="flex-1">
               {activeFile ? (
                 <CodeEditor
-                  files={files.flatMap(f =>
-                    f.type === 'folder' && f.children
-                      ? f.children.map(child => ({ id: child.id, name: child.name, content: child.content || '' }))
-                      : f.type === 'file'
-                        ? [{ id: f.id, name: f.name, content: f.content || '' }]
-                        : []
+                  files={files.flatMap((f) =>
+                    f.type === "folder" && f.children
+                      ? f.children.map((child) => ({
+                          id: child.id,
+                          name: child.name,
+                          content: child.content || "",
+                        }))
+                      : f.type === "file"
+                      ? [{ id: f.id, name: f.name, content: f.content || "" }]
+                      : []
                   )}
-                  setFiles={(updatedFiles: { id: any; name: string; content: string }[]) => {
-                    setFiles(prevFiles => {
+                  setFiles={(
+                    updatedFiles: { id: any; name: string; content: string }[]
+                  ) => {
+                    setFiles((prevFiles) => {
                       // Replace the children of the root folder with updatedFiles, preserving FileItem structure
-                      return prevFiles.map(f =>
-                        f.type === 'folder' && f.children
+                      return prevFiles.map((f) =>
+                        f.type === "folder" && f.children
                           ? {
                               ...f,
-                              children: f.children.map(child => {
-                                const updated = updatedFiles.find(u => u.id === child.id);
+                              children: f.children.map((child) => {
+                                const updated = updatedFiles.find(
+                                  (u) => u.id === child.id
+                                );
                                 return updated
-                                  ? { ...child, content: updated.content, name: updated.name, isModified: true, lastModified: new Date().toISOString() }
+                                  ? {
+                                      ...child,
+                                      content: updated.content,
+                                      name: updated.name,
+                                      isModified: true,
+                                      lastModified: new Date().toISOString(),
+                                    }
                                   : child;
                               }),
                             }
@@ -836,13 +929,15 @@ document.addEventListener('DOMContentLoaded', function() {
                   }}
                   activeFileId={activeFile?.id}
                   setActiveFileId={(id: string) => {
-                    const file = files.flatMap(f =>
-                      f.type === 'folder' && f.children
-                        ? f.children
-                        : f.type === 'file'
+                    const file = files
+                      .flatMap((f) =>
+                        f.type === "folder" && f.children
+                          ? f.children
+                          : f.type === "file"
                           ? [f]
                           : []
-                    ).find(f => f.id === id);
+                      )
+                      .find((f) => f.id === id);
                     setActiveFile(file || null);
                   }}
                   onChange={handleCodeChange}
@@ -853,9 +948,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div className="h-full flex items-center justify-center bg-gray-800">
                   <div className="text-center">
                     <FolderOpen className="h-16 w-16 text-gray-700 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-500 mb-2">No File Selected</h3>
-                    <p className="text-gray-600 mb-4">Select a file from the explorer to start coding</p>
-                    <Button onClick={() => setShowFolders(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <h3 className="text-xl font-semibold text-gray-500 mb-2">
+                      No File Selected
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Select a file from the explorer to start coding
+                    </p>
+                    <Button
+                      onClick={() => setShowFolders(true)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
                       <FolderOpen className="h-4 w-4 mr-2" />
                       Open File Explorer
                     </Button>
@@ -867,7 +969,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
           {/* Live Preview */}
           <div
-            className={`${getPanelWidth()} ${showAI || showCollaboration || showCloudStorage ? "border-r border-gray-800" : ""}`}
+            className={`${getPanelWidth()} ${
+              showAI || showCollaboration || showCloudStorage
+                ? "border-r border-gray-800"
+                : ""
+            }`}
           >
             <LivePreview
               html={previewCode.html}
@@ -883,18 +989,20 @@ document.addEventListener('DOMContentLoaded', function() {
           {/* AI Assistant as Modal */}
           <Dialog open={showAI} onOpenChange={setShowAI}>
             <DialogContent className="max-w-2xl w-full rounded-2xl p-0 overflow-hidden shadow-2xl border-0">
-              <DialogTitle className="text-lg font-bold px-6 pt-6 pb-2">AI Assistant</DialogTitle>
+              <DialogTitle className="text-lg font-bold px-6 pt-6 pb-2">
+                AI Assistant
+              </DialogTitle>
               <div className="px-6 pb-6 pt-2">
                 <AIAssistant
                   currentCode={previewCode}
                   onCodeSuggestion={(code, language) => {
                     if (activeFile && activeFile.language === language) {
-                      handleCodeChange(code)
+                      handleCodeChange(code);
                     } else {
                       toast({
                         title: "AI Suggestion",
                         description: `Switch to a ${language.toUpperCase()} file to apply this suggestion.`,
-                      })
+                      });
                     }
                   }}
                   isDarkMode={true}
@@ -906,7 +1014,9 @@ document.addEventListener('DOMContentLoaded', function() {
           {/* Collaboration Panel as Modal */}
           <Dialog open={showCollaboration} onOpenChange={setShowCollaboration}>
             <DialogContent className="max-w-2xl w-full rounded-2xl p-0 overflow-hidden shadow-2xl border-0">
-              <DialogTitle className="text-lg font-bold px-6 pt-6 pb-2">Team Collaboration</DialogTitle>
+              <DialogTitle className="text-lg font-bold px-6 pt-6 pb-2">
+                Team Collaboration
+              </DialogTitle>
               <div className="px-6 pb-6 pt-2">
                 <CollaborationSystem
                   projectId="demo-project"
@@ -921,7 +1031,9 @@ document.addEventListener('DOMContentLoaded', function() {
           {/* Cloud Storage as Modal */}
           <Dialog open={showCloudStorage} onOpenChange={setShowCloudStorage}>
             <DialogContent className="max-w-2xl w-full rounded-2xl p-0 overflow-hidden shadow-2xl border-0">
-              <DialogTitle className="text-lg font-bold px-6 pt-6 pb-2">Cloud Storage</DialogTitle>
+              <DialogTitle className="text-lg font-bold px-6 pt-6 pb-2">
+                Cloud Storage
+              </DialogTitle>
               <div className="px-6 pb-6 pt-2">
                 <CloudStorage
                   isOnline={isOnline}
@@ -939,5 +1051,5 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
     </TooltipProvider>
-  )
+  );
 }

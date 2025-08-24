@@ -5,10 +5,23 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Search, MoreVertical, Code2, Calendar, Share2, Trash2, Edit, Copy, Star } from "lucide-react"
+import {
+  Plus,
+  Search,
+  MoreVertical,
+  Code2,
+  Calendar,
+  Share2,
+  Trash2,
+  Edit,
+  Copy,
+  Star,
+  LogOut
+} from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useToast } from "@/hooks/use-toast"
+import { useSession, signOut } from "next-auth/react"
 
 interface Project {
   id: string
@@ -27,13 +40,15 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterTag, setFilterTag] = useState("")
   const { toast } = useToast()
+  const { data: session } = useSession() // NextAuth session
 
   useEffect(() => {
-    loadProjects()
-  }, [])
+    if (typeof window !== "undefined" && session?.user) {
+      loadProjects()
+    }
+  }, [session])
 
   const loadProjects = () => {
-    // Load from localStorage
     const savedProjects = JSON.parse(localStorage.getItem("devmirror-projects") || "[]")
     const projectsWithIds = savedProjects.map((project: any, index: number) => ({
       id: project.id || `project-${index}`,
@@ -46,7 +61,17 @@ export default function DashboardPage() {
       isStarred: project.isStarred || false,
       tags: project.tags || ["html", "css", "js"],
     }))
+    projectsWithIds.sort((a: Project, b: Project) => {
+      if (a.isStarred && !b.isStarred) return -1
+      if (!a.isStarred && b.isStarred) return 1
+      return new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+    })
     setProjects(projectsWithIds)
+  }
+
+  const saveProjects = (updated: Project[]) => {
+    setProjects(updated)
+    localStorage.setItem("devmirror-projects", JSON.stringify(updated))
   }
 
   const filteredProjects = projects.filter((project) => {
@@ -58,17 +83,15 @@ export default function DashboardPage() {
   })
 
   const toggleStar = (projectId: string) => {
-    const updatedProjects = projects.map((project) =>
-      project.id === projectId ? { ...project, isStarred: !project.isStarred } : project,
+    const updated = projects.map((p) =>
+      p.id === projectId ? { ...p, isStarred: !p.isStarred } : p
     )
-    setProjects(updatedProjects)
-    localStorage.setItem("devmirror-projects", JSON.stringify(updatedProjects))
+    saveProjects(updated)
   }
 
   const deleteProject = (projectId: string) => {
-    const updatedProjects = projects.filter((project) => project.id !== projectId)
-    setProjects(updatedProjects)
-    localStorage.setItem("devmirror-projects", JSON.stringify(updatedProjects))
+    const updated = projects.filter((p) => p.id !== projectId)
+    saveProjects(updated)
     toast({
       title: "Project Deleted",
       description: "Project has been removed from your dashboard.",
@@ -76,28 +99,35 @@ export default function DashboardPage() {
   }
 
   const duplicateProject = (project: Project) => {
-    const newProject = {
+    const newProject: Project = {
       ...project,
       id: `project-${Date.now()}`,
       name: `${project.name} (Copy)`,
       lastModified: new Date().toISOString(),
     }
-    const updatedProjects = [...projects, newProject]
-    setProjects(updatedProjects)
-    localStorage.setItem("devmirror-projects", JSON.stringify(updatedProjects))
+    const updated = [...projects, newProject]
+    saveProjects(updated)
     toast({
       title: "Project Duplicated",
       description: `${newProject.name} has been created.`,
     })
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+  const shareProject = async (projectId: string) => {
+    const url = `${window.location.origin}/editor?project=${projectId}`
+    await navigator.clipboard.writeText(url)
+    toast({
+      title: "Link Copied",
+      description: "Project link copied to clipboard!",
+    })
+  }
+
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     })
-  }
 
   const allTags = Array.from(new Set(projects.flatMap((p) => p.tags)))
 
@@ -110,57 +140,59 @@ export default function DashboardPage() {
             <Link href="/" className="flex items-center space-x-3">
               <Image src="/logo.png" alt="DevMirror" width={32} height={32} className="rounded-lg shadow-md" />
               <div>
-                <h1 className="text-xl font-semibold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">DevMirror</h1>
+                <h1 className="text-xl font-semibold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                  DevMirror
+                </h1>
                 <p className="text-xs text-cyan-300/70">Dashboard</p>
               </div>
             </Link>
-            <div className="flex items-center space-x-4">
-              <Link href="/editor">
-                <Button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white border-none shadow-md transition-all">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Project
+
+            <div className="flex items-center gap-3">
+              {session?.user ? (
+                <Button
+                  className="bg-red-600 hover:bg-red-500 text-white"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
                 </Button>
-              </Link>
+              ) : (
+                <Link href="/auth">
+                  <Button className="bg-green-600 hover:bg-green-500 text-white">Sign In</Button>
+                </Link>
+              )}
+
+              {session?.user && (
+                <Link href="/editor">
+                  <Button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white border-none shadow-md transition-all">
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Project
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
       </header>
+
+      {/* Body */}
       <div className="container mx-auto px-4 py-8 flex-1">
-        {/* Search and Filter */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400 h-4 w-4" />
-            <Input
-              placeholder="Search projects..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-slate-900/60 border-cyan-500/30 text-cyan-100 placeholder-cyan-400/50 focus:border-cyan-500 focus:ring-cyan-500 rounded-xl shadow-inner"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant={filterTag === "" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilterTag("")}
-              className={filterTag === "" ? "bg-cyan-500 text-white border-none" : "border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10 bg-transparent"}
-            >
-              All
-            </Button>
-            {allTags.map((tag) => (
-              <Button
-                key={tag}
-                variant={filterTag === tag ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilterTag(tag)}
-                className={filterTag === tag ? "bg-cyan-500 text-white border-none" : "border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10 bg-transparent"}
-              >
-                {tag}
+        {!session?.user ? (
+          <div className="text-center py-16">
+            <Code2 className="h-16 w-16 text-cyan-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-cyan-300 mb-2">
+              Please sign in to access your dashboard
+            </h3>
+            <p className="text-cyan-400 mb-6">
+              Sign in to view your projects, edit, share, or create new ones.
+            </p>
+            <Link href="/auth">
+              <Button className="bg-green-600 hover:bg-green-500 text-white">
+                Go to Sign In
               </Button>
-            ))}
+            </Link>
           </div>
-        </div>
-        {/* Projects Grid */}
-        {filteredProjects.length === 0 ? (
+        ) : filteredProjects.length === 0 ? (
           <div className="text-center py-16">
             <Code2 className="h-16 w-16 text-cyan-600 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-cyan-300 mb-2">
@@ -183,11 +215,16 @@ export default function DashboardPage() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProjects.map((project) => (
-              <Card key={project.id} className="hover:shadow-2xl transition-shadow group bg-[#23272f] border border-gray-800 rounded-xl shadow-md">
+              <Card
+                key={project.id}
+                className="hover:shadow-2xl transition-shadow group bg-[#23272f] border border-gray-800 rounded-xl shadow-md"
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg truncate text-silver-100">{project.name}</CardTitle>
+                      <CardTitle className="text-lg truncate text-silver-100">
+                        {project.name}
+                      </CardTitle>
                       <CardDescription className="mt-1 line-clamp-2 text-gray-400">
                         {project.description}
                       </CardDescription>
@@ -263,6 +300,7 @@ export default function DashboardPage() {
                     <Button
                       size="sm"
                       variant="outline"
+                      onClick={() => shareProject(project.id)}
                       className="border-gray-700 text-gray-400 hover:bg-gray-800 hover:text-gray-300 bg-transparent"
                     >
                       <Share2 className="h-4 w-4" />

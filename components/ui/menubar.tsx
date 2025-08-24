@@ -2,18 +2,15 @@
 
 import * as React from "react"
 import * as MenubarPrimitive from "@radix-ui/react-menubar"
-import { Check, ChevronRight, Circle } from "lucide-react"
+import { Check, ChevronRight, Circle, LogOut } from "lucide-react"
+import { signOut } from "next-auth/react"   // ✅ Import signOut from next-auth
 
 import { cn } from "@/lib/utils"
 
 const MenubarMenu = MenubarPrimitive.Menu
-
 const MenubarGroup = MenubarPrimitive.Group
-
 const MenubarPortal = MenubarPrimitive.Portal
-
 const MenubarSub = MenubarPrimitive.Sub
-
 const MenubarRadioGroup = MenubarPrimitive.RadioGroup
 
 const Menubar = React.forwardRef<
@@ -216,6 +213,17 @@ const MenubarShortcut = ({
 }
 MenubarShortcut.displayname = "MenubarShortcut"
 
+// ✅ Custom Logout Item
+const MenubarLogoutItem = () => (
+  <MenubarItem
+    onClick={() => signOut({ callbackUrl: "/" })}
+    className="cursor-pointer text-red-600 focus:bg-red-100"
+  >
+    <LogOut className="mr-2 h-4 w-4" />
+    Logout
+  </MenubarItem>
+)
+
 export {
   Menubar,
   MenubarMenu,
@@ -233,4 +241,5 @@ export {
   MenubarGroup,
   MenubarSub,
   MenubarShortcut,
+  MenubarLogoutItem,   // ✅ export logout
 }

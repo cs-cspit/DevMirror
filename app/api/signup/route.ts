@@ -7,7 +7,10 @@ import crypto from "crypto";
 
 export async function POST(req: Request) {
   try {
+    // Connect to MongoDB
     await connectDB();
+
+    // Parse request body
     const { name, email, password } = await req.json();
 
     if (!name || !email || !password) {
@@ -52,7 +55,7 @@ export async function POST(req: Request) {
     const verifyUrl = `${baseUrl}/auth/verify-email?token=${verificationToken}&email=${email}`;
 
     // Send verification email
-    await sendVerificationEmail(email, verifyUrl);
+    await sendVerificationEmail(email, verificationToken, baseUrl);
 
     return NextResponse.json(
       { message: "User created! Check your email to verify your account." },
@@ -61,7 +64,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("❌ Signup error:", err);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: (err as Error).message || "Internal server error" },
       { status: 500 }
     );
   }

@@ -147,16 +147,40 @@ export default function DashboardPage() {
               </div>
             </Link>
 
-            <div className="flex items-center gap-3">
-              {session?.user ? (
-                <Button
-                  className="bg-red-600 hover:bg-red-500 text-white"
-                  onClick={() => signOut({ callbackUrl: "/" })}
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
-              ) : (
+            <div className="flex items-center gap-4">
+              {session?.user && (
+                <div className="flex items-center gap-3">
+                  {/* Avatar or Initial */}
+                  {session.user.image ? (
+                    <img
+                      src={session.user.image}
+                      alt="avatar"
+                      className="w-9 h-9 rounded-full border border-gray-700"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-cyan-600 flex items-center justify-center text-white font-bold">
+                      {session.user.name?.[0] || session.user.email?.[0]}
+                    </div>
+                  )}
+
+                  {/* User info */}
+                  <div className="hidden sm:block text-right">
+                    <p className="text-sm font-medium">{session.user.name || "User"}</p>
+                    <p className="text-xs text-gray-400">{session.user.email}</p>
+                  </div>
+
+                  {/* Logout */}
+                  <Button
+                    className="bg-red-600 hover:bg-red-500 text-white"
+                    onClick={() => signOut({ callbackUrl: "/auth" })}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                </div>
+              )}
+
+              {!session?.user && (
                 <Link href="/auth">
                   <Button className="bg-green-600 hover:bg-green-500 text-white">Sign In</Button>
                 </Link>

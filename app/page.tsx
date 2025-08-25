@@ -19,9 +19,12 @@ import {
   Github,
   Twitter,
   Linkedin,
+  LogOut,
+  User
 } from "lucide-react"
 import Image from "next/image"
 import { useState } from "react"
+import { useSession, signOut } from "next-auth/react"
 
 const templates = [
   {
@@ -93,6 +96,7 @@ const categories = ["All", "Portfolio", "Landing", "Dashboard", "Blog", "E-comme
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("All")
+  const { data: session } = useSession()
 
   const filteredTemplates =
     selectedCategory === "All" ? templates : templates.filter((template) => template.category === selectedCategory)
@@ -107,10 +111,14 @@ export default function HomePage() {
           <div className="flex items-center space-x-3">
             <Image src="/logo.png" alt="DevMirror" width={32} height={32} className="rounded-lg shadow-md" />
             <div>
-              <h1 className="text-xl font-semibold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">DevMirror</h1>
+              <h1 className="text-xl font-semibold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                DevMirror
+              </h1>
               <p className="text-xs text-cyan-300/70">Professional Web Editor</p>
             </div>
           </div>
+
+          {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link href="/editor" className="text-cyan-300 hover:text-white font-medium transition-colors">
               Editor
@@ -121,10 +129,28 @@ export default function HomePage() {
             <Link href="/dashboard" className="text-cyan-300 hover:text-white font-medium transition-colors">
               Dashboard
             </Link>
-            <Link href="/auth" className="text-cyan-300 hover:text-white font-medium transition-colors">
-              Sign In
-            </Link>
+
+            {session ? (
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 text-cyan-300">
+                  <User className="h-4 w-4" />
+                  <span>{session.user?.name || session.user?.email}</span>
+                </div>
+                <Button
+                  onClick={() => signOut({ callbackUrl: "/auth" })}
+                  className="bg-red-600 hover:bg-red-500 text-white px-4 py-2"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <Link href="/auth" className="text-cyan-300 hover:text-white font-medium transition-colors">
+                Sign In
+              </Link>
+            )}
           </nav>
+
           <Link href="/editor">
             <Button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white border-none shadow-md transition-all">
               <Code2 className="mr-2 h-4 w-4" />
@@ -133,6 +159,7 @@ export default function HomePage() {
           </Link>
         </div>
       </header>
+
       {/* Hero Section */}
       <section className="py-20">
         <div className="container mx-auto px-4 text-center">
@@ -156,15 +183,18 @@ export default function HomePage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link href="/auth">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="px-8 py-3 border-cyan-500/30 bg-transparent text-cyan-200 hover:bg-cyan-500/10 hover:text-white"
-                >
-                  Create Account
-                </Button>
-              </Link>
+
+              {!session && (
+                <Link href="/auth">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="px-8 py-3 border-cyan-500/30 bg-transparent text-cyan-200 hover:bg-cyan-500/10 hover:text-white"
+                  >
+                    Create Account
+                  </Button>
+                </Link>
+              )}
             </div>
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto">
@@ -184,6 +214,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
       {/* Featured Templates */}
       <section className="py-16">
         <div className="container mx-auto px-4">
@@ -385,15 +416,18 @@ export default function HomePage() {
                   Start Building
                 </Button>
               </Link>
-              <Link href="/auth">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-silver-100 px-8 py-3 bg-transparent"
-                >
-                  Get Pro Access
-                </Button>
-              </Link>
+
+              {!session && (
+                <Link href="/auth">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-silver-100 px-8 py-3 bg-transparent"
+                  >
+                    Get Pro Access
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -401,88 +435,21 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="text-white py-16 border-t border-gray-800">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
-            <div className="md:col-span-2">
-              <div className="flex items-center space-x-3 mb-6">
-                <Image src="/logo.png" alt="DevMirror" width={32} height={32} className="rounded-lg" />
-                <div>
-                  <h4 className="text-lg font-semibold text-silver-100">DevMirror</h4>
-                  <p className="text-sm text-gray-500">Professional Web Development Platform</p>
-                </div>
-              </div>
-              <p className="text-gray-400 max-w-md leading-relaxed">
-                Empowering developers worldwide with professional templates, powerful tools, and seamless collaboration
-                features.
-              </p>
-            </div>
-
-            <div>
-              <h5 className="font-semibold mb-4 text-silver-100">Templates</h5>
-              <ul className="space-y-3 text-gray-400">
-                <li>
-                  <Link href="/templates/portfolio" className="hover:text-silver-100 transition-colors">
-                    Portfolio
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/templates/landing" className="hover:text-silver-100 transition-colors">
-                    Landing Pages
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/templates/dashboard" className="hover:text-silver-100 transition-colors">
-                    Dashboards
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/templates/ecommerce" className="hover:text-silver-100 transition-colors">
-                    E-commerce
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h5 className="font-semibold mb-4 text-silver-100">Resources</h5>
-              <ul className="space-y-3 text-gray-400">
-                <li>
-                  <Link href="/docs" className="hover:text-silver-100 transition-colors">
-                    Documentation
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/tutorials" className="hover:text-silver-100 transition-colors">
-                    Tutorials
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/community" className="hover:text-silver-100 transition-colors">
-                    Community
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/support" className="hover:text-silver-100 transition-colors">
-                    Support
-                  </Link>
-                </li>
-              </ul>
-            </div>
+        <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+          <div className="flex items-center space-x-3 mb-4 md:mb-0">
+            <Image src="/logo.png" alt="DevMirror" width={32} height={32} className="rounded-lg shadow-md" />
+            <p className="text-gray-400 text-sm">© 2025 DevMirror. All rights reserved.</p>
           </div>
-
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between">
-            <p className="text-gray-500 text-sm">&copy; 2024 DevMirror. All rights reserved.</p>
-            <div className="flex items-center space-x-4 mt-4 md:mt-0">
-              <Link href="#" className="text-gray-500 hover:text-silver-100 transition-colors">
-                <Github className="h-5 w-5" />
-              </Link>
-              <Link href="#" className="text-gray-500 hover:text-silver-100 transition-colors">
-                <Twitter className="h-5 w-5" />
-              </Link>
-              <Link href="#" className="text-gray-500 hover:text-silver-100 transition-colors">
-                <Linkedin className="h-5 w-5" />
-              </Link>
-            </div>
+          <div className="flex space-x-4">
+            <Link href="#" className="text-gray-400 hover:text-white">
+              <Github className="h-5 w-5" />
+            </Link>
+            <Link href="#" className="text-gray-400 hover:text-white">
+              <Twitter className="h-5 w-5" />
+            </Link>
+            <Link href="#" className="text-gray-400 hover:text-white">
+              <Linkedin className="h-5 w-5" />
+            </Link>
           </div>
         </div>
       </footer>

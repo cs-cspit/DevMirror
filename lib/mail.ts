@@ -1,3 +1,4 @@
+// File: lib/mail.ts
 import nodemailer from "nodemailer";
 
 /**
@@ -12,12 +13,16 @@ export async function sendVerificationEmail(
   baseUrl: string
 ) {
   try {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      throw new Error("EMAIL_USER or EMAIL_PASS is not defined in .env.local");
+    }
+
     // Create a transporter using Gmail SMTP
     const transporter = nodemailer.createTransport({
-      service: "Gmail",
+      service: "gmail",
       auth: {
-        user: process.env.EMAIL_USER, // Your Gmail email
-        pass: process.env.EMAIL_PASS, // App password from Gmail
+        user: process.env.EMAIL_USER, // Your Gmail address
+        pass: process.env.EMAIL_PASS, // 16-character App Password from Gmail
       },
     });
 
@@ -31,13 +36,13 @@ export async function sendVerificationEmail(
       subject: "Verify Your Email",
       html: `
         <h2>Welcome to Dev Mirror!</h2>
-        <p>Click the link below to verify your email:</p>
+        <p>Please click the link below to verify your email:</p>
         <a href="${verifyLink}">Verify Email</a>
         <p>This link will expire in 24 hours.</p>
       `,
     };
 
-    // Send email
+    // Send the email
     await transporter.sendMail(mailOptions);
     console.log(`✅ Verification email sent to ${email}`);
   } catch (error) {

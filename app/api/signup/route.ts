@@ -1,3 +1,5 @@
+// File: app/api/signup/route.ts
+
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import connectDB from "@/lib/mongodb";
@@ -32,7 +34,7 @@ export async function POST(req: Request) {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate verification token and expiration (24 hours)
+    // Generate verification token (24-hour expiration)
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -48,7 +50,7 @@ export async function POST(req: Request) {
 
     await newUser.save();
 
-    // Build base URL (local or deployed)
+    // Build base URL (local for now)
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
     // Construct the verification link

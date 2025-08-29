@@ -7,9 +7,14 @@ import DarkVeil from "@/src/Backgrounds/DarkVeil/DarkVeil";
 import NextAuthSessionProvider from "@/components/session-provider";
 
 export const metadata: Metadata = {
-  title: "v0 App",
-  description: "Created with v0",
-  generator: "v0.dev",
+  title: "DevMirror",
+  description: "Created with team",
+  generator: "Self",
+  icons: {
+    icon: "/favicon.ico",       // ✅ standard favicon
+    shortcut: "/favicon.ico",
+    apple: "/favicon.png",      // ✅ for iOS devices
+  },
 };
 
 export default function RootLayout({
@@ -22,6 +27,11 @@ export default function RootLayout({
       lang="en"
       className={`${GeistSans.variable} ${GeistMono.variable}`}
     >
+      <head>
+        {/* Extra fallback (forces favicon load) */}
+        <link rel="icon" href="/favicon.png" sizes="any" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
+      </head>
       <body
         style={{
           margin: 0,
